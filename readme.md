@@ -2,7 +2,7 @@
 
 A simple Chip-8 emulator coming with the most popular games. You can put your own roms under the __roms__ folder.
 
-![Screenshot](screenshots/0.jpg)
+![Screenshot](https://github.com/erbuka/chip-8/blob/master/screenshots/0.JPG)
 
 ## Building
 
