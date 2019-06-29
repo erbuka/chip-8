@@ -1,6 +1,6 @@
 # CHIP-8 Emulator
 
-A simple Chip-8 emulator coming with the most popular games. You can put your own roms under the __roms__ folder.
+A simple Chip-8 emulator with a 3D voxel rendering mode and a filter to clear the intrinsic screen flickering. It comes with the most popular games, and you can add more under the __roms__ folder.
 
 ![Screenshot](https://github.com/erbuka/chip-8/blob/master/screenshots/0.JPG)
 

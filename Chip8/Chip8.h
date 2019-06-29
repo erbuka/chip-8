@@ -10,6 +10,7 @@ namespace c8
 		Chip8();
 		~Chip8();
 
+		// Todo think about excluding this from PI
 		void SetPixel(uint8_t x, uint8_t y, bool value);
 		bool GetPixel(uint8_t x, uint8_t y) const;
 
