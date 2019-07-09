@@ -327,6 +327,7 @@ namespace c8
 			float dt = deltaTime.count();
 			float clockPeriod = 1.0f / m_Config.ClockFrequency;
 
+
 			// Update CHIP8
 			timeAcc += dt;
 			while (timeAcc >= clockPeriod)
