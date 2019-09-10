@@ -613,7 +613,7 @@ namespace c8
 
 	uint8_t Chip8::GetRegisterCount() const
 	{
-		return uint8_t();
+		return Impl::NumRegisters;
 	}
 
 	uint8_t Chip8::GetSoundTimer() const
