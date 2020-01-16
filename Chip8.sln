@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
+# Visual Studio 16
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Chip8", "Chip8\Chip8.vcxproj", "{A13EF60C-0D53-1EBE-D6D4-C11D42A81AEF}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GLFW", "vendor\glfw\GLFW.vcxproj", "{154B857C-0182-860D-AA6E-6C109684020F}"
