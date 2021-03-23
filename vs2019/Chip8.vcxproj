@@ -71,7 +71,7 @@
       <AdditionalLibraryDirectories>..\vendor\bass\lib\windows;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>IF EXIST ..\src\roms\ (xcopy /Q /E /Y /I ..\src\roms ..\bin\Debug\$(ProjectName)\roms &gt; nul) ELSE (xcopy /Q /Y /I ..\src\roms ..\bin\Debug\$(ProjectName)\roms &gt; nul)
+      <Command>IF EXIST ..\roms\ (xcopy /Q /E /Y /I ..\roms ..\bin\Debug\$(ProjectName)\roms &gt; nul) ELSE (xcopy /Q /Y /I ..\roms ..\bin\Debug\$(ProjectName)\roms &gt; nul)
 IF EXIST ..\vendor\bass\lib\windows\bass.dll\ (xcopy /Q /E /Y /I ..\vendor\bass\lib\windows\bass.dll ..\bin\Debug\$(ProjectName)\ &gt; nul) ELSE (xcopy /Q /Y /I ..\vendor\bass\lib\windows\bass.dll ..\bin\Debug\$(ProjectName)\ &gt; nul)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -97,7 +97,7 @@ IF EXIST ..\vendor\bass\lib\windows\bass.dll\ (xcopy /Q /E /Y /I ..\vendor\bass\
       <AdditionalLibraryDirectories>..\vendor\bass\lib\windows;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>IF EXIST ..\src\roms\ (xcopy /Q /E /Y /I ..\src\roms ..\bin\Release\$(ProjectName)\roms &gt; nul) ELSE (xcopy /Q /Y /I ..\src\roms ..\bin\Release\$(ProjectName)\roms &gt; nul)
+      <Command>IF EXIST ..\roms\ (xcopy /Q /E /Y /I ..\roms ..\bin\Release\$(ProjectName)\roms &gt; nul) ELSE (xcopy /Q /Y /I ..\roms ..\bin\Release\$(ProjectName)\roms &gt; nul)
 IF EXIST ..\vendor\bass\lib\windows\bass.dll\ (xcopy /Q /E /Y /I ..\vendor\bass\lib\windows\bass.dll ..\bin\Release\$(ProjectName)\ &gt; nul) ELSE (xcopy /Q /Y /I ..\vendor\bass\lib\windows\bass.dll ..\bin\Release\$(ProjectName)\ &gt; nul)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

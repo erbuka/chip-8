@@ -131,7 +131,7 @@ project "Chip8"
     files { "src/**.cpp", "src/**.h" }
 
     postbuildcommands {
-        "{COPY} ../src/roms/ ../bin/%{cfg.buildcfg}/%{prj.name}/roms" 
+        "{COPY} ../roms/ ../bin/%{cfg.buildcfg}/%{prj.name}/roms" 
     }
 
     filter "configurations:Debug"
