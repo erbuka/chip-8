@@ -1,6 +1,6 @@
-#include "Chip8.h"
+#include "chip8.h"
 
-#include "Macros.h"
+#include "macros.h"
 
 #include <spdlog/spdlog.h>
 
@@ -12,41 +12,41 @@
 namespace c8
 {
 
-	class BitView
+	class bit_view
 	{
 	public:
 
 
-		BitView(void * ptr, size_t length) :
-			m_Ptr((uint8_t*)ptr),
-			m_Count(length * 8)
+		bit_view(void * ptr, size_t length) :
+			m_ptr((uint8_t*)ptr),
+			m_count(length * 8)
 		{
 		}
 
-		size_t Count() const
+		size_t count() const
 		{
-			return m_Count;
+			return m_count;
 		}
 
-		bool Get(size_t bit) const
+		bool get(size_t bit) const
 		{
-			return m_Ptr[bit / 8] & (0x80 >> (bit % 8));
+			return m_ptr[bit / 8] & (0x80 >> (bit % 8));
 		}
 
-		void Set(size_t bit, bool value)
+		void set(size_t bit, bool value)
 		{
 			uint8_t mod = bit % 8;
 			uint8_t mask = 0x80 >> mod;
-			value ? m_Ptr[bit / 8] |= mask : m_Ptr[bit / 8] &= ~mask;
+			value ? m_ptr[bit / 8] |= mask : m_ptr[bit / 8] &= ~mask;
 		}
 
 
 	private:
-		size_t m_Count;
-		uint8_t *m_Ptr;
+		size_t m_count;
+		uint8_t *m_ptr;
 	};
 
-	static const std::string SplashScreenData =
+	static const std::string s_splash_screen_data =
 		"................................................................"
 		"................................................................"
 		"................................................................"
@@ -81,7 +81,7 @@ namespace c8
 		"................................................................"
 		;
 
-	struct Chip8::Impl
+	struct chip8::impl
 	{
 		/*	--- Memory ---
 			CHIP-8 was most commonly implemented on 4K systems, such as the Cosmac VIP and the Telmac 1800. These machines had 4096 (0x1000) 
@@ -91,13 +91,13 @@ namespace c8
 			are reserved for display refresh, and the 96 bytes below that (0xEA0-0xEFF) were reserved for the call stack, internal use, and other variables.
 		*/
 
-		static constexpr uint32_t TotalMemory = 0x1000;
-		static constexpr uint32_t ProgramStartAddress = 0x200;
-		static constexpr uint32_t DisplayAddress = 0xf00;
-		static constexpr uint32_t StackAddress = 0xea0;
-		static constexpr uint32_t ProgramMemory = TotalMemory - ProgramStartAddress - (TotalMemory - StackAddress);
+		static constexpr uint32_t s_total_memory = 0x1000;
+		static constexpr uint32_t s_program_start_address = 0x200;
+		static constexpr uint32_t s_display_address = 0xf00;
+		static constexpr uint32_t s_stack_address = 0xea0;
+		static constexpr uint32_t s_program_memory = s_total_memory - s_program_start_address - (s_total_memory - s_stack_address);
 
-		std::array<uint8_t, TotalMemory> Memory;
+		std::array<uint8_t, s_total_memory> m_memory;
 
 		
 
@@ -108,17 +108,17 @@ namespace c8
 
 			The address register, which is named I, is 16 bits wide and is used with several opcodes that involve memory operations.
 		*/
-		static constexpr uint8_t NumRegisters = 16;
+		static constexpr uint8_t s_num_registers = 16;
 
-		std::array<uint8_t, NumRegisters> V; // GP registers
-		uint16_t PC;	// Program counter
-		uint16_t I;		// Address register
+		std::array<uint8_t, s_num_registers> m_v; // GP registers
+		uint16_t m_pc;	// Program counter
+		uint16_t m_i;		// Address register
 
 		/*	--- The stack ---
 			The stack is only used to store return addresses when subroutines are called.The original 1802 version allocated 48 bytes for up to
 			24 levels of nesting; modern implementations normally have at least 16 levels.
 		*/
-		uint8_t SP;		// Stack pointer
+		uint8_t m_sp;		// Stack pointer
 
 
 		/*	--- Timers ---
@@ -128,11 +128,11 @@ namespace c8
 			Sound timer: This timer is used for sound effects. When its value is nonzero, a beeping sound is made.
 		
 		*/
-		static constexpr float TimePeriod = 1 / 60.0f;
+		static constexpr float s_time_period = 1 / 60.0f;
 
-		uint8_t DelayTimer;
-		uint8_t SoundTimer;
-		float TimeCounter;
+		uint8_t m_delay_timer;
+		uint8_t m_sound_timer;
+		float m_time_counter;
 		
 
 		/*	--- Input --- 
@@ -140,10 +140,10 @@ namespace c8
 			directional input. Three opcodes are used to detect input. One skips an instruction if a specific key is pressed, while another does 
 			the same if a specific key is not pressed. The third waits for a key press, and then stores it in one of the data registers.
 		*/
-		static constexpr uint8_t NumKeys = 16;
-		std::array<bool, NumKeys> Keyboard;
+		static constexpr uint8_t s_num_keys = 16;
+		std::array<bool, s_num_keys> m_keyboard;
 		
-		static constexpr std::array<uint8_t, NumKeys * 5> Characters = {
+		static constexpr std::array<uint8_t, s_num_keys * 5> s_characters = {
 			0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 			0x20, 0x60, 0x20, 0x20, 0x70, // 1
 			0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -173,9 +173,9 @@ namespace c8
 			when a sprite is drawn and set to 0 otherwise. This is used for collision detection.
 		
 		*/
-		static constexpr uint8_t ScreenWidth = 64;
-		static constexpr uint8_t ScreenHeight = 32;
-		BitView VideoMemory = { (void*)&Memory[DisplayAddress], 256 };
+		static constexpr uint8_t s_screen_width = 64;
+		static constexpr uint8_t s_screen_height = 32;
+		bit_view m_video_memory = { (void*)&m_memory[s_display_address], 256 };
 
 		/*
 			CHIP-8 has 35 opcodes, which are all two bytes long and stored big-endian. The opcodes are listed below, in hexadecimal and with the following symbols:
@@ -234,70 +234,70 @@ namespace c8
 		
 		*/
 
-		Impl()
+		impl()
 		{
-			Reset();
+			reset();
 
-			for (uint16_t x = 0; x < ScreenWidth; x++)
+			for (uint16_t x = 0; x < s_screen_width; x++)
 			{
-				for (uint16_t y = 0; y < ScreenHeight; y++)
+				for (uint16_t y = 0; y < s_screen_height; y++)
 				{
-					VideoMemory.Set(y * ScreenWidth + x, SplashScreenData[y * ScreenWidth + x] == 'X');
+					m_video_memory.set(y * s_screen_width + x, s_splash_screen_data[y * s_screen_width + x] == 'X');
 				}
 			}
 
 		}
 
-		void Reset()
+		void reset()
 		{
-			memset(Memory.data(), 0, TotalMemory);
-			memset(V.data(), 0, NumRegisters);
-			memset(Keyboard.data(), 0, NumKeys);
+			memset(m_memory.data(), 0, s_total_memory);
+			memset(m_v.data(), 0, s_num_registers);
+			memset(m_keyboard.data(), 0, s_num_keys);
 
-			PC = ProgramStartAddress;
-			SP = 0;
-			I = 0;
-			DelayTimer = 0;
-			SoundTimer = 0;
-			TimeCounter = 0;
+			m_pc = s_program_start_address;
+			m_sp = 0;
+			m_i = 0;
+			m_delay_timer = 0;
+			m_sound_timer = 0;
+			m_time_counter = 0;
 
-			memcpy(Memory.data(), Characters.data(), sizeof(Characters));
+			memcpy(m_memory.data(), s_characters.data(), sizeof(s_characters));
 		}
 
-		void Load(void * romData, size_t length)
+		void load(void * rom_data, size_t length)
 		{
-			if (length > ProgramMemory)
+			if (length > s_program_memory)
 			{
 				C8_ERRO("Rom data is to big ({0} bytes)", length);
 				return;
 			}
-			Reset();
-			memcpy(&Memory[ProgramStartAddress], romData, length);
+			reset();
+			memcpy(&m_memory[s_program_start_address], rom_data, length);
 		}
 
-		void ClockCycle(float deltaTime)
+		void clock_cycle(float delta_time)
 		{
 			// Handle timers
 
-			TimeCounter += deltaTime;
+			m_time_counter += delta_time;
 
-			while (TimeCounter > TimePeriod)
+			while (m_time_counter > s_time_period)
 			{
-				TimeCounter -= TimePeriod;
+				m_time_counter -= s_time_period;
 
-				if (DelayTimer > 0)
-					DelayTimer--;
+				if (m_delay_timer > 0)
+					m_delay_timer--;
 
-				if (SoundTimer > 0)
-					SoundTimer--;
+				if (m_sound_timer > 0)
+					m_sound_timer--;
 
 			}
 
 			// Fetch instruction (big endian)
 
-			uint16_t instruction =  (uint16_t(Memory[PC]) << 8) | Memory[PC + 1];
+			uint16_t instruction =  (uint16_t(m_memory[m_pc]) << 8) | m_memory[m_pc + 1];
 
-			PC += 2;
+			m_pc += 2;
 
 			// Nibbles
 			uint8_t n3 = (instruction & 0xf000) >> 12;
@@ -313,8 +313,8 @@ namespace c8
 			int16_t nnn = (instruction & 0x0fff) >> 0;
 
 			// X & Y registers
-			uint8_t& vx = V[n2];
-			uint8_t& vy = V[n1];
+			uint8_t& vx = m_v[n2];
+			uint8_t& vy = m_v[n1];
 
 			// Temporary
 			uint8_t tmp0[16];
@@ -327,48 +327,48 @@ namespace c8
 				switch (lb)
 				{
 				case 0xe0:
-					memset(&Memory[DisplayAddress], 0, TotalMemory - DisplayAddress);
+					memset(&m_memory[s_display_address], 0, s_total_memory - s_display_address);
 					C8_INFO("CLS");
 					break;
 				case 0xee:
-					PC = Memory[StackAddress + SP] | (uint16_t(Memory[StackAddress + SP + 1]) << 8);
-					SP -= 2;
+					m_pc = m_memory[s_stack_address + m_sp] | (uint16_t(m_memory[s_stack_address + m_sp + 1]) << 8);
+					m_sp -= 2;
 					C8_INFO("RET");
 					break;
 				default:
-					C8_UNKN(instruction, PC);
-					PC -= 2;
+					C8_UNKN(instruction, m_pc);
+					m_pc -= 2;
 				}
 
 				break;
 
 			case 1: // Jump
-				PC = nnn;
+				m_pc = nnn;
 				C8_INFO("JP {0:x}", nnn);
 				break;
 
 			case 2: // Call sub
-				SP += 2;
-				Memory[StackAddress + SP] = PC & 0xff;
-				Memory[StackAddress + SP + 1] = (PC & 0xff00) >> 8;
-				PC =  nnn;
+				m_sp += 2;
+				m_memory[s_stack_address + m_sp] = m_pc & 0xff;
+				m_memory[s_stack_address + m_sp + 1] = (m_pc & 0xff00) >> 8;
+				m_pc =  nnn;
 				C8_INFO("CALL {0:x}", nnn);
 				break;
 
 			case 3:
 				C8_INFO("SE V{0:x}, {1}", n2, lb);
 				if ((vx ^ lb) == 0)
-					PC = PC + 2;
+					m_pc = m_pc + 2;
 				break;
 			case 4:
 				C8_INFO("SNE V{0:x}, {1}", n2, lb);
 				if ((vx ^ lb) != 0)
-					PC = PC + 2;
+					m_pc = m_pc + 2;
 				break;
 			case 5:
 				C8_INFO("SE V{0:x}, V{1:x}", n2, n1);
 				if (vx == vy)
-					PC = PC + 2;
+					m_pc = m_pc + 2;
 				break;
 			case 6:
 				vx = lb;
@@ -401,49 +401,49 @@ namespace c8
 				case 4:
 					tmp0[0] = vx;
 					vx += vy;
-					V[15] = vx >= tmp0[0] ? 0 : 1;
+					m_v[15] = vx >= tmp0[0] ? 0 : 1;
 					C8_INFO("ADD V{0:x}, V{1:x}", n2, n1);
 					break;
 				case 5:
 					tmp0[0] = vx;
 					vx -= vy;
-					V[15] = vx > tmp0[0] ? 0 : 1;
+					m_v[15] = vx > tmp0[0] ? 0 : 1;
 					C8_INFO("SUB V{0:x}, V{1:x}", n2, n1);
 					break;
 				case 6:
-					V[15] = vx & 1;
+					m_v[15] = vx & 1;
 					vx >>= 1;
 					C8_INFO("SHR V{0:x}", n2);
 					break;
 				case 7:
 					tmp0[0] = vx;
 					vx = vy - vx;
-					V[15] = vx > tmp0[0] ? 0 : 1;
+					m_v[15] = vx > tmp0[0] ? 0 : 1;
 					C8_INFO("SUBN V{0:x}, V{1:x}", n2, n1);
 					break;
 				case 0xe:
-					V[15] = (vx & 0x80) >> 7;
+					m_v[15] = (vx & 0x80) >> 7;
 					vx <<= 1;
 					C8_INFO("SHL V{0:x}", n2);
 					break;
 				default:
-					C8_UNKN(instruction, PC);
-					PC -= 2;
+					C8_UNKN(instruction, m_pc);
+					m_pc -= 2;
 				}
 				break;
 
 			case 9:
 				if (vx != vy)
-					PC = PC + 2;
+					m_pc = m_pc + 2;
 				C8_INFO("SNE V{0:x}, V{1:x}", n2, n1);
 				break;
 
 			case 0xa:
-				I = nnn;
+				m_i = nnn;
 				C8_INFO("LD I, {0:x}", nnn);
 				break;
 			case 0xb:
-				PC = V[0] + nnn;
+				m_pc = m_v[0] + nnn;
 				C8_INFO("JP V0, {0:x}", nnn);
 				break;
 			case 0xc:
@@ -451,29 +451,29 @@ namespace c8
 				C8_INFO("RND V{0:x}, {1}", n2, lb);
 				break;
 			case 0xd:
-				V[15] = 0;
+				m_v[15] = 0;
 				
 				for (uint16_t i = 0; i < n0; i++)
 				{
-					uint16_t startX = vx;
-					uint16_t y = (vy + i) % ScreenHeight;
+					uint16_t start_x = vx;
+					uint16_t y = (vy + i) % s_screen_height;
 
-					uint8_t spriteRow = Memory[I + i];
+					uint8_t sprite_row = m_memory[m_i + i];
 
 					for (uint16_t j = 0; j < 8; j++)
 					{
 
-						uint16_t x = (startX + j) % ScreenWidth;
-						uint16_t bitIdx = y * ScreenWidth + x;
+						uint16_t x = (start_x + j) % s_screen_width;
+						uint16_t bit_idx = y * s_screen_width + x;
 
-						bool screenVal = VideoMemory.Get(bitIdx);
-						bool spriteVal = (spriteRow & (0x80 >> j));
+						bool screen_val = m_video_memory.get(bit_idx);
+						bool sprite_val = (sprite_row & (0x80 >> j));
 
-						VideoMemory.Set(bitIdx, screenVal ^ spriteVal);
+						m_video_memory.set(bit_idx, screen_val ^ sprite_val);
 
-						if (screenVal && !VideoMemory.Get(bitIdx))
+						if (screen_val && !m_video_memory.get(bit_idx))
 						{
-							V[15] = 1;
+							m_v[15] = 1;
 						}
 					}
 
@@ -486,13 +486,13 @@ namespace c8
 				switch (lb)
 				{
 				case 0x9e:
-					if (Keyboard[vx])
-						PC = PC + 2;
+					if (m_keyboard[vx])
+						m_pc = m_pc + 2;
 					C8_INFO("SKP V{0:x}", n2);
 					break;
 				case 0xa1:
-					if (!Keyboard[vx])
-						PC = PC + 2;
+					if (!m_keyboard[vx])
+						m_pc = m_pc + 2;
 					C8_INFO("SKNP V{0:x}", n2);
 					break;
 				}
@@ -502,7 +502,7 @@ namespace c8
 				switch (lb)
 				{
 				case 0x07:
-					vx = DelayTimer;
+					vx = m_delay_timer;
 					C8_INFO("LD V{0:x}, DT", n2);
 					break;
 				case 0x0a:
@@ -511,9 +511,9 @@ namespace c8
 
 					btmp = false;
 					
-					for (uint8_t i = 0; i < sizeof(Keyboard); i++)
+					for (uint8_t i = 0; i < sizeof(m_keyboard); i++)
 					{
-						if (Keyboard[i])
+						if (m_keyboard[i])
 						{
 							vx = i;
 							btmp = true;
@@ -522,55 +522,55 @@ namespace c8
 					}
 
 					if (!btmp)
-						PC -= 2;
+						m_pc -= 2;
 
 
 					break;
 				case 0x15:
-					DelayTimer = vx;
+					m_delay_timer = vx;
 					C8_INFO("LD DT, V{0:x}", n2);
 					break;
 				case 0x18:
-					SoundTimer = vx;
+					m_sound_timer = vx;
 					C8_INFO("LD ST, V{0:x}", n2);
 					break;
 				case 0x1e:
-					I += vx;
+					m_i += vx;
 					C8_INFO("ADD I, V{0:x}", n2);
 					break;
 				case 0x29:
-					I = vx * 5;
+					m_i = vx * 5;
 					C8_INFO("LD F, V{0:x}", n2);
 					break;
 				case 0x33:
-					Memory[I + 0] = vx / 100;
-					Memory[I + 1] = (vx - Memory[I + 0] * 100) / 10;
-					Memory[I + 2] = vx - Memory[I + 0] * 100 - Memory[I + 1] * 10;
+					m_memory[m_i + 0] = vx / 100;
+					m_memory[m_i + 1] = (vx - m_memory[m_i + 0] * 100) / 10;
+					m_memory[m_i + 2] = vx - m_memory[m_i + 0] * 100 - m_memory[m_i + 1] * 10;
 					C8_INFO("LD B, V{0:x}", n2);
 					break;
 				case 0x55:
 					for (uint8_t i = 0; i <= n2; i++)
 					{
-						Memory[I + i] = V[i];
+						m_memory[m_i + i] = m_v[i];
 					}
 					C8_INFO("LD [I], V{0:x}", n2);
 					break;
 				case 0x65:
 					for (uint8_t i = 0; i <= n2; i++)
 					{
-						V[i] = Memory[I + i];
+						m_v[i] = m_memory[m_i + i];
 					}
 					C8_INFO("LD V{0:x}, [I]", n2);
 					break;
 				default:
-					C8_UNKN(instruction, PC);
-					PC -= 2;
+					C8_UNKN(instruction, m_pc);
+					m_pc -= 2;
 				}
 				break;
 
 			default:
-				C8_UNKN(instruction, PC);
-				PC -= 2;
+				C8_UNKN(instruction, m_pc);
+				m_pc -= 2;
 				break;
 			}
 			
@@ -582,71 +582,71 @@ namespace c8
 
 	};
 
-	Chip8::Chip8()
+	chip8::chip8()
 	{
-		m_Impl = std::make_unique<Impl>();
+		m_impl = std::make_unique<impl>();
 	}
 
-	Chip8::~Chip8()
+	chip8::~chip8()
 	{
 	}
 
-	void Chip8::SetPixel(uint8_t x, uint8_t y, bool value)
+	void chip8::set_pixel(uint8_t x, uint8_t y, bool value)
 	{
-		assert(x < Impl::ScreenWidth);
-		assert(y < Impl::ScreenHeight);
-		return m_Impl->VideoMemory.Set(y * Impl::ScreenWidth + x, value);
+		assert(x < impl::s_screen_width);
+		assert(y < impl::s_screen_height);
+		return m_impl->m_video_memory.set(y * impl::s_screen_width + x, value);
 	}
 
-	bool Chip8::GetPixel(uint8_t x, uint8_t y) const
+	bool chip8::get_pixel(uint8_t x, uint8_t y) const
 	{
-		assert(x < Impl::ScreenWidth);
-		assert(y < Impl::ScreenHeight);
-		return m_Impl->VideoMemory.Get(y * Impl::ScreenWidth + x);
+		assert(x < impl::s_screen_width);
+		assert(y < impl::s_screen_height);
+		return m_impl->m_video_memory.get(y * impl::s_screen_width + x);
 	}
 
-	uint8_t Chip8::GetRegister(uint8_t i) const
+	uint8_t chip8::get_register(uint8_t i) const
 	{
-		assert(i < Impl::NumRegisters);
-		return m_Impl->V[i];
+		assert(i < impl::s_num_registers);
+		return m_impl->m_v[i];
 	}
 
-	uint8_t Chip8::GetRegisterCount() const
+	uint8_t chip8::get_register_count() const
 	{
-		return Impl::NumRegisters;
+		return impl::s_num_registers;
 	}
 
-	uint8_t Chip8::GetSoundTimer() const
+	uint8_t chip8::get_sound_timer() const
 	{
-		return m_Impl->SoundTimer;
-	}
-
-
-	void Chip8::ClockCycle(float deltaTime)
-	{
-		m_Impl->ClockCycle(deltaTime);
-	}
-
-	void Chip8::Load(void * romData, size_t length)
-	{
-		m_Impl->Load(romData, length);
+		return m_impl->m_sound_timer;
 	}
 
 
-	void Chip8::SetKeyState(uint8_t key, bool pressed)
+	void chip8::clock_cycle(float delta_time)
 	{
-		assert(key < Impl::NumKeys);
-		m_Impl->Keyboard[key] = pressed;
+		m_impl->clock_cycle(delta_time);
 	}
 
-	uint8_t Chip8::GetScreenWidth() const
+	void chip8::load(void * rom_data, size_t length)
 	{
-		return Impl::ScreenWidth;
+		m_impl->load(rom_data, length);
 	}
 
-	uint8_t Chip8::GetScreenHeight() const
+
+	void chip8::set_key_state(uint8_t key, bool pressed)
 	{
-		return Impl::ScreenHeight;
+		assert(key < impl::s_num_keys);
+		m_impl->m_keyboard[key] = pressed;
+	}
+
+	uint8_t chip8::get_screen_width() const
+	{
+		return impl::s_screen_width;
+	}
+
+	uint8_t chip8::get_screen_height() const
+	{
+		return impl::s_screen_height;
 	}
 
 

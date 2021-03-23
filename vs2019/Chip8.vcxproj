@@ -102,16 +102,16 @@ IF EXIST ..\vendor\bass\lib\windows\bass.dll\ (xcopy /Q /E /Y /I ..\vendor\bass\
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\Application.h" />
-    <ClInclude Include="..\src\Beep.h" />
-    <ClInclude Include="..\src\Chip8.h" />
-    <ClInclude Include="..\src\Macros.h" />
+    <ClInclude Include="..\src\application.h" />
+    <ClInclude Include="..\src\beep.h" />
+    <ClInclude Include="..\src\chip8.h" />
+    <ClInclude Include="..\src\macros.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\Application.cpp" />
-    <ClCompile Include="..\src\Beep.cpp" />
-    <ClCompile Include="..\src\Chip8.cpp" />
-    <ClCompile Include="..\src\Main.cpp" />
+    <ClCompile Include="..\src\application.cpp" />
+    <ClCompile Include="..\src\beep.cpp" />
+    <ClCompile Include="..\src\chip8.cpp" />
+    <ClCompile Include="..\src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Glad.vcxproj">

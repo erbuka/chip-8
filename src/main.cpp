@@ -1,10 +1,10 @@
-#include "Application.h"
-#include "Chip8.h"
+#include "application.h"
+#include "chip8.h"
 
 static int EntryPoint()
 {
-	c8::Application app;
-	return app.Start();
+	c8::application app;
+	return app.start();
 }
 #ifdef DEBUG
 	int main(int argc, char **argv)

@@ -1,6 +1,6 @@
-#include "Beep.h"
+#include "beep.h"
 
-#include "Macros.h"
+#include "macros.h"
 
 #include <spdlog/spdlog.h>
 
@@ -9,12 +9,12 @@
 
 namespace c8
 {
-	struct Beep::Impl
+	struct beep::impl
 	{
 
 		static DWORD CALLBACK WriteStream(HSTREAM handle, int16_t *buffer, DWORD length, void *user)
 		{
-			Impl* impl = (Impl*)user;
+			impl* impl1 = (impl*)user;
 			float freq;
 
 			memset(buffer, 0, length);
@@ -23,37 +23,37 @@ namespace c8
 			BASS_ChannelGetAttribute(handle, BASS_ATTRIB_FREQ, &freq);
 
 			float timeStep = 1.0f / freq;
-			float vol = impl->VolFn();
+			float vol = impl1->m_vol_fn();
 
 			if (vol == 0)
 				return length;
 
 			for (size_t i = 0; i < length / sizeof(int16_t); i++)
 			{
-				impl->Time += timeStep;
-				buffer[i] = int16_t(std::sin(impl->Time * 440 * 2 * 3.141592) * 32768 * vol);
+				impl1->m_time += timeStep;
+				buffer[i] = int16_t(std::sin(impl1->m_time * 440 * 2 * 3.141592) * 32768 * vol);
 			}
 
 			return length;
 
 		}
 
-		Impl()
+		impl()
 		{
 			if (!BASS_Init(-1, 8000, BASS_DEVICE_MONO, 0, NULL))
 				C8_ERRO("Could not initialize BASS");
 		}
-		~Impl()
+		~impl()
 		{
 			BASS_Free();
 		}
 
 
 
-		void Start(const Beep::VolumeFn& volFn)
+		void start(const beep::volume_fn& vol_fn)
 		{
-			VolFn = volFn;
-			Time = 0;
+			m_vol_fn = vol_fn;
+			m_time = 0;
 			HSTREAM stream;
 
 
@@ -72,25 +72,25 @@ namespace c8
 
 		}
 
-		VolumeFn VolFn;
-		float Time;
+		volume_fn m_vol_fn;
+		float m_time;
 
 	};
 
 
 
-	Beep::Beep()
+	beep::beep()
 	{
-		m_Impl = std::make_unique<Impl>();
+		m_impl = std::make_unique<impl>();
 	}
 
-	Beep::~Beep()
+	beep::~beep()
 	{
 
 	}
 
-	void Beep::Start(const VolumeFn & volFn)
+	void beep::start(const volume_fn & vol_fn)
 	{
-		m_Impl->Start(volFn);
+		m_impl->start(vol_fn);
 	}
 }
