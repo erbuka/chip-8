@@ -123,10 +123,10 @@ project "Chip8"
         "vendor/imgui",
         "vendor/imgui/backends",
         "vendor/glm",
-        "vendor/bass/include"
+        "vendor/miniaudio"
     }
 
-    links { "Glad", "opengl32", "GLFW", "ImGui", "bass" }
+    links { "Glad", "opengl32", "GLFW", "ImGui" }
 
     files { "src/**.cpp", "src/**.h" }
 
@@ -139,7 +139,3 @@ project "Chip8"
         
     filter "configurations:Release"
         kind "WindowedApp"
-
-    filter "system:windows"
-        libdirs { "vendor/bass/lib/windows" }
-        postbuildcommands "{COPY} ../vendor/bass/lib/windows/bass.dll ../bin/%{cfg.buildcfg}/%{prj.name}/"

@@ -4,80 +4,76 @@
 
 #include <spdlog/spdlog.h>
 
-#include <bass.h>
+#include <glm/ext.hpp>
+
+#define MINIAUDIO_IMPLEMENTATION
+#include <miniaudio.h>
 
 
 namespace c8
 {
+
 	struct beep::impl
 	{
 
-		static DWORD CALLBACK WriteStream(HSTREAM handle, int16_t *buffer, DWORD length, void *user)
+		static constexpr ma_uint32 s_sample_rate = 48000;
+		static constexpr ma_uint32 s_channels = 2;
+		static constexpr float s_samples_per_second = 1.0f / s_sample_rate;
+
+		uint64_t m_current_frame = 0;
+		ma_device m_device;
+		volume_fn m_vol_fn;
+
+		static void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
 		{
-			impl* impl1 = (impl*)user;
-			float freq;
+			// In playback mode copy data to pOutput. In capture mode read data from pInput. In full-duplex mode, both
+			// pOutput and pInput will be valid and you can move data from pInput into pOutput. Never process more than
+			// frameCount frames.
+			auto impl0 = static_cast<impl*>(pDevice->pUserData);
 
-			memset(buffer, 0, length);
+			const auto vol = impl0->m_vol_fn();
+			const auto outFloat = static_cast<float*>(pOutput);
 
-			QWORD posByte = BASS_ChannelGetPosition(handle, BASS_POS_BYTE);
-			BASS_ChannelGetAttribute(handle, BASS_ATTRIB_FREQ, &freq);
-
-			float timeStep = 1.0f / freq;
-			float vol = impl1->m_vol_fn();
-
-			if (vol == 0)
-				return length;
-
-			for (size_t i = 0; i < length / sizeof(int16_t); i++)
+			for (size_t s = 0; s < frameCount; ++s)
 			{
-				impl1->m_time += timeStep;
-				buffer[i] = int16_t(std::sin(impl1->m_time * 440 * 2 * 3.141592) * 32768 * vol);
+				for (size_t c = 0; c < s_channels; ++c)
+				{
+					float time = impl0->m_current_frame * s_samples_per_second;
+					float value = std::sin(time * glm::pi<float>() * 2.0f * 440.0f) * vol;
+					outFloat[s * s_channels + c] = value;
+				}
+				impl0->m_current_frame++;
 			}
 
-			return length;
-
 		}
 
-		impl()
+		impl() {}
+
+		void start(const volume_fn& fn)
 		{
-			if (!BASS_Init(-1, 8000, BASS_DEVICE_MONO, 0, NULL))
-				C8_ERRO("Could not initialize BASS");
+			m_vol_fn = fn;
+
+			ma_device_config config = ma_device_config_init(ma_device_type_playback);
+			config.playback.format = ma_format_f32;			
+			config.playback.channels = s_channels;			
+			config.sampleRate = s_sample_rate;				
+			config.dataCallback = impl::data_callback;		
+			config.pUserData = this;						
+
+			if (ma_device_init(NULL, &config, &m_device) != MA_SUCCESS) {
+				spdlog::error("Failed to initialize audio device");
+				return;
+			}
+
+			ma_device_start(&m_device);     // The device is sleeping by default so you'll need to start it manually.
+
 		}
+
 		~impl()
 		{
-			BASS_Free();
+			ma_device_uninit(&m_device);    // This will stop the device so no need to do that manually.
 		}
-
-
-
-		void start(const beep::volume_fn& vol_fn)
-		{
-			m_vol_fn = vol_fn;
-			m_time = 0;
-			HSTREAM stream;
-
-
-			// 10ms update period
-			BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 10); // 10ms update period
-
-			// set default/maximum buffer length to 200ms
-			BASS_SetConfig(BASS_CONFIG_BUFFER, 200);
-
-			if (!(stream = BASS_StreamCreate(8000, 1, 0, (STREAMPROC*)&WriteStream, this)))
-				C8_ERRO("Could not initialize audio stream");
-
-
-
-			BASS_ChannelPlay(stream, FALSE); // start it
-
-		}
-
-		volume_fn m_vol_fn;
-		float m_time;
-
 	};
-
-
 
 	beep::beep()
 	{
