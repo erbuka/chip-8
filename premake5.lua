@@ -8,7 +8,7 @@ workspace "Chip8"
         symbols "On"
         optimize "Off"
         defines { "DEBUG" }
-    
+
     filter "configurations:Release"
         symbols "Off"
         optimize "On"
@@ -16,7 +16,7 @@ workspace "Chip8"
     filter "system:windows"
         systemversion "latest"
 
-project "GLFW" 
+project "GLFW"
     location(_ACTION)
     kind "StaticLib"
     language "C"
@@ -27,46 +27,43 @@ project "GLFW"
 
     defines { "GLFW_STATIC" }
 
-    includedirs { 
+    includedirs {
         "vendor/glfw/src"
     }
-    files { 
+    files {
+        "vendor/glfw/src/egl_context.c",
         "vendor/glfw/src/context.c",
         "vendor/glfw/src/init.c",
         "vendor/glfw/src/input.c",
         "vendor/glfw/src/monitor.c",
+        "vendor/glfw/src/osmesa_context.c",
+        "vendor/glfw/src/vulkan.c",
         "vendor/glfw/src/window.c",
         "vendor/glfw/src/xkb_unicode.c",
-        "vendor/glfw/src/vulkan.c",
     }
 
-    filter "system:windows" 
-        defines { "_GLFW_WIN32", "_CRT_SECURE_NO_WARNINGS" }
+    filter "system:windows"
+        defines { "_GLFW_WIN32" }
         files {
+            "vendor/glfw/src/wgl_context.c",
             "vendor/glfw/src/win32_init.c",
             "vendor/glfw/src/win32_joystick.c",
             "vendor/glfw/src/win32_monitor.c",
-            "vendor/glfw/src/win32_time.c",
             "vendor/glfw/src/win32_thread.c",
+            "vendor/glfw/src/win32_time.c",
             "vendor/glfw/src/win32_window.c",
-            "vendor/glfw/src/wgl_context.c",
-            "vendor/glfw/src/egl_context.c",
-            "vendor/glfw/src/osmesa_context.c"
         }
 
     filter "system:linux"
-        defines { "_GLFW_X11 " }
+        defines { "_GLFW_X11" }
         files {
+            "vendor/glfw/src/glx_context.c",
             "vendor/glfw/src/x11_init.c",
             "vendor/glfw/src/x11_monitor.c",
             "vendor/glfw/src/x11_window.c",
-            "vendor/glfw/src/xkb_unicode.c",
-            "vendor/glfw/src/posix_time.c",
             "vendor/glfw/src/posix_thread.c",
-            "vendor/glfw/src/glx_context.c",
-            "vendor/glfw/src/egl_context.c",
-            "vendor/glfw/src/osmesa_context.c",
-            "vendor/glfw/src/linux_joystick.c"
+            "vendor/glfw/src/posix_time.c",
+            "vendor/glfw/src/linux_joystick.c",
         }
 
 project "Glad"
@@ -86,21 +83,21 @@ project "ImGui"
     location(_ACTION)
     kind "StaticLib"
     language "C++"
-    
+
     objdir "bin-int/%{cfg.buildcfg}/%{prj.name}"
     targetdir "bin/%{cfg.buildcfg}/%{prj.name}"
     debugdir "bin/%{cfg.buildcfg}/%{prj.name}"
 
-    includedirs { 
-        "vendor/imgui", 
+    includedirs {
+        "vendor/imgui",
         "vendor/imgui/backends",
         "vendor/glfw/include",
-        "vendor/glad/include" 
+        "vendor/glad/include"
     }
 
     defines { "IMGUI_IMPL_OPENGL_LOADER_GLAD" }
-    
-    files { 
+
+    files {
         "vendor/imgui/*.cpp",
         "vendor/imgui/backends/imgui_impl_glfw.cpp",
         "vendor/imgui/backends/imgui_impl_opengl3.cpp",
@@ -126,16 +123,21 @@ project "Chip8"
         "vendor/miniaudio"
     }
 
-    links { "Glad", "opengl32", "GLFW", "ImGui" }
 
     files { "src/**.cpp", "src/**.h" }
 
     postbuildcommands {
-        "{COPY} ../roms/ ../bin/%{cfg.buildcfg}/%{prj.name}/roms" 
+        "{COPY} ../roms/ ../bin/%{cfg.buildcfg}/%{prj.name}/roms"
     }
+
+    filter "system:windows"
+        links { "Glad", "opengl32", "GLFW", "ImGui" }
+
+    filter "system:linux"
+        links { "Glad", "GL", "GLFW", "ImGui", "X11", "pthread", "dl" }
 
     filter "configurations:Debug"
         kind "ConsoleApp"
-        
+
     filter "configurations:Release"
         kind "WindowedApp"
